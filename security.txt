@@ -1,0 +1,880 @@
+#hill cipheer
+import numpy as np
+
+# Hardcoded 2x2 key matrix
+key = np.array([[3, 3],
+                [2, 5]])
+
+plain = input("Enter Plaintext: ").upper().replace(" ", "")
+
+# Padding
+if len(plain) % 2 != 0:
+    plain += "X"
+
+# Convert plaintext to numbers
+nums = []
+for ch in plain:
+    nums.append(ord(ch) - 65)
+
+# Convert to 2 × n matrix
+p = np.array(nums).reshape(-1, 2).T
+
+print("Plaintext Matrix:")
+print(p)
+
+# Encryption
+cipher_matrix = np.dot(key, p) % 26
+
+print("Encrypted Matrix:")
+print(cipher_matrix)
+
+# Convert encrypted matrix to ciphertext
+cipher = ""
+
+rows = len(cipher_matrix)
+cols = len(cipher_matrix[0])
+
+for j in range(cols):
+    for i in range(rows):
+        cipher += chr(cipher_matrix[i][j] + 65)
+
+print("Ciphertext:", cipher)
+
+# ---------- Decryption ----------
+
+# Find determinant
+det = key[0][0] * key[1][1] - key[0][1] * key[1][0]
+det = det % 26
+
+# Find modular inverse of determinant
+for i in range(26):
+    if (det * i) % 26 == 1:
+        det_inv = i
+        break
+
+# Find adjoint matrix
+adj = np.array([[key[1][1], -key[0][1]],
+                [-key[1][0], key[0][0]]])
+
+# Find inverse key matrix
+inv_key = (det_inv * adj) % 26
+
+print("Inverse Key Matrix:")
+print(inv_key)
+
+# Decrypt
+plain_matrix = np.dot(inv_key, cipher_matrix) % 26
+
+print("Decrypted Matrix:")
+print(plain_matrix)
+
+# Convert decrypted matrix to plaintext
+decrypted = ""
+
+rows = len(plain_matrix)
+cols = len(plain_matrix[0])
+
+for j in range(cols):
+    for i in range(rows):
+        decrypted += chr(plain_matrix[i][j] + 65)
+
+print("Decrypted Text:", decrypted)
+
+
+# Playfair Cipher - Encryption and Decryption (Without Functions)
+
+keyword = input("Enter keyword: ").upper().replace("J", "I")
+plaintext = input("Enter plaintext: ").upper().replace("J", "I")
+
+# Generate key
+key = ""
+
+for ch in keyword:
+    if ch.isalpha() and ch not in key:
+        key += ch
+
+for ch in "ABCDEFGHIKLMNOPQRSTUVWXYZ":
+    if ch not in key:
+        key += ch
+
+# Create 5x5 matrix
+matrix = [list(key[i:i + 5]) for i in range(0, 25, 5)]
+
+print("\nKey Matrix:")
+for row in matrix:
+    print(" ".join(row))
+
+# Preprocess plaintext
+plaintext = "".join(ch for ch in plaintext if ch.isalpha())
+text = ""
+i = 0
+
+while i < len(plaintext):
+    a = plaintext[i]
+
+    if i + 1 < len(plaintext):
+        b = plaintext[i + 1]
+
+        if a == b:
+            text += a + "X"
+            i += 1
+        else:
+            text += a + b
+            i += 2
+    else:
+        text += a + "X"
+        i += 1
+
+if len(text) % 2 != 0:
+    text += "X"
+
+print("\nProcessed Plaintext:", text)
+
+# Encryption
+cipher = ""
+
+for i in range(0, len(text), 2):
+    a = text[i]
+    b = text[i + 1]
+
+    for r in range(5):
+        for c in range(5):
+            if matrix[r][c] == a:
+                r1, c1 = r, c
+            if matrix[r][c] == b:
+                r2, c2 = r, c
+
+    if r1 == r2:
+        cipher += matrix[r1][(c1 + 1) % 5]
+        cipher += matrix[r2][(c2 + 1) % 5]
+    elif c1 == c2:
+        cipher += matrix[(r1 + 1) % 5][c1]
+        cipher += matrix[(r2 + 1) % 5][c2]
+    else:
+        cipher += matrix[r1][c2]
+        cipher += matrix[r2][c1]
+
+print("\nEncrypted Text:", cipher)
+
+# Decryption
+decrypted = ""
+
+for i in range(0, len(cipher), 2):
+    a = cipher[i]
+    b = cipher[i + 1]
+
+    for r in range(5):
+        for c in range(5):
+            if matrix[r][c] == a:
+                r1, c1 = r, c
+            if matrix[r][c] == b:
+                r2, c2 = r, c
+
+    if r1 == r2:
+        decrypted += matrix[r1][(c1 - 1) % 5]
+        decrypted += matrix[r2][(c2 - 1) % 5]
+    elif c1 == c2:
+        decrypted += matrix[(r1 - 1) % 5][c1]
+        decrypted += matrix[(r2 - 1) % 5][c2]
+    else:
+        decrypted += matrix[r1][c2]
+        decrypted += matrix[r2][c1]
+
+print("Decrypted Text:", decrypted)
+
+
+#DSS
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+import base64
+
+# Generate RSA keys in memory
+key = RSA.generate(2048)
+private_key = key
+public_key = key.publickey()
+signature = None
+original_message = None
+
+while True:
+    print("\n===== DIGITAL SIGNATURE SYSTEM =====")
+    print("1. Generate RSA Keys")
+    print("2. Sign a Message")
+    print("3. Verify Signature")
+    print("4. Demonstrate Message Tampering")
+    print("5. Secure Email Simulation")
+    print("6. Exit")
+
+    choice = input("Enter your choice: ")
+
+    # 1. Generate RSA Keys
+    if choice == "1":
+        key = RSA.generate(2048)
+        private_key = key
+        public_key = key.publickey()
+        signature = None
+        original_message = None
+
+        print("\nRSA Keys Generated Successfully!")
+
+    # 2. Sign a Message
+    elif choice == "2":
+        original_message = input("Enter message to sign: ")
+
+        hash_value = SHA256.new(original_message.encode())
+        signature = pkcs1_15.new(private_key).sign(hash_value)
+
+        print("\nSHA-256 Hash:", hash_value.hexdigest())
+        print("Digital Signature:", base64.b64encode(signature).decode())
+        print("Message Signed Successfully!")
+
+    # 3. Verify Signature
+    elif choice == "3":
+        if signature is None:
+            print("Sign a message first!")
+        else:
+            message = input("Enter received message: ")
+            hash_value = SHA256.new(message.encode())
+
+            try:
+                pkcs1_15.new(public_key).verify(hash_value, signature)
+                print("Signature Verification Successful!")
+                print("Message is authentic and unchanged.")
+            except (ValueError, TypeError):
+                print("Signature Verification Failed!")
+                print("Message may have been modified.")
+
+    # 4. Demonstrate Message Tampering
+    elif choice == "4":
+        if signature is None:
+            print("Sign a message first!")
+        else:
+            modified_message = original_message + " hacked"
+
+            print("\nOriginal Message:", original_message)
+            print("Tampered Message:", modified_message)
+
+            try:
+                pkcs1_15.new(public_key).verify(
+                    SHA256.new(modified_message.encode()), signature
+                )
+                print("Verification Successful!")
+            except (ValueError, TypeError):
+                print("Verification Failed!")
+                print("Message has been changed after signing.")
+
+    # 5. Secure Email Simulation
+    elif choice == "5":
+        message = input("Enter Alice's message: ")
+
+        signature_email = pkcs1_15.new(private_key).sign(
+            SHA256.new(message.encode())
+        )
+
+        print("\nAlice sends:", message)
+        print("Message sent to Bob.")
+
+        try:
+            pkcs1_15.new(public_key).verify(
+                SHA256.new(message.encode()), signature_email
+            )
+            print("Bob: VALID SIGNATURE")
+            print("Message integrity verified.")
+        except (ValueError, TypeError):
+            print("Bob: INVALID SIGNATURE")
+
+        modified = message + " hacked"
+        print("\nTampered Message:", modified)
+
+        try:
+            pkcs1_15.new(public_key).verify(
+                SHA256.new(modified.encode()), signature_email
+            )
+            print("VALID SIGNATURE")
+        except (ValueError, TypeError):
+            print("INVALID SIGNATURE")
+            print("Message integrity failed.")
+
+    # 6. Exit
+    elif choice == "6":
+        print("Exiting Digital Signature System...")
+        break
+
+    else:
+        print("Invalid choice! Enter a valid option.")
+
+
+
+#file integrity
+import hashlib
+import json
+import os
+
+RECORD_FILE = "checksums.json"
+
+# Load previous checksum record
+if os.path.exists(RECORD_FILE):
+    with open(RECORD_FILE, "r") as file:
+        old_record = json.load(file)
+else:
+    old_record = {}
+
+# Get files to monitor
+files = input("Enter file names separated by comma: ").split(",")
+files = [filename.strip() for filename in files if filename.strip()]
+
+new_record = {}
+
+print("\n----- FILE INTEGRITY REPORT -----")
+
+# Check current files
+for filename in files:
+    if os.path.exists(filename):
+        # Calculate MD5 checksum
+        with open(filename, "rb") as file:
+            checksum = hashlib.md5(file.read()).hexdigest()
+
+        new_record[filename] = checksum
+
+        if filename not in old_record:
+            print(filename, ": New File")
+        elif old_record[filename] == checksum:
+            print(filename, ": Not Modified")
+        else:
+            print(filename, ": Modified")
+    else:
+        print(filename, ": Missing File")
+
+# Check previously stored files
+for filename in old_record:
+    if filename not in files:
+        print(filename, ": Missing File")
+
+# Update JSON record
+with open(RECORD_FILE, "w") as file:
+    json.dump(new_record, file, indent=4)
+
+print("\nChecksum record updated.")
+
+
+
+#MD5 diggest
+import hashlib
+
+while True:
+    print("\n===== MD5 MESSAGE DIGEST =====")
+    print("1. Generate MD5 Message Digest")
+    print("2. Verify Message Integrity")
+    print("3. Demonstrate the Avalanche Effect")
+    print("4. Generate MD5 Checksum for a Text File")
+    print("5. Compare MD5, SHA-1 and SHA-256")
+    print("6. Exit")
+
+    choice = input("Enter your choice: ")
+
+    # 1. Generate MD5
+    if choice == "1":
+        text = input("Enter text: ")
+        digest = hashlib.md5(text.encode()).hexdigest()
+        print("\nMD5 Digest:", digest)
+
+    # 2. Verify Message Integrity
+    elif choice == "2":
+        text = input("Enter text: ")
+        old_digest = input("Enter previous MD5 digest: ").strip()
+        new_digest = hashlib.md5(text.encode()).hexdigest()
+
+        if new_digest == old_digest:
+            print("Matches - Message is not modified")
+        else:
+            print("Does Not Match - Message has been modified")
+
+    # 3. Avalanche Effect
+    elif choice == "3":
+        text1 = input("Enter first string: ")
+        text2 = input("Enter second string: ")
+
+        digest1 = hashlib.md5(text1.encode()).hexdigest()
+        digest2 = hashlib.md5(text2.encode()).hexdigest()
+
+        print("\nString 1:", text1)
+        print("MD5:", digest1)
+
+        print("\nString 2:", text2)
+        print("MD5:", digest2)
+
+        if digest1 != digest2:
+            print("\nAvalanche Effect: Hash values are different.")
+        else:
+            print("\nHash values are identical.")
+
+    # 4. File Checksum
+    elif choice == "4":
+        filename = input("Enter file path: ")
+
+        try:
+            with open(filename, "rb") as file:
+                data = file.read()
+
+            digest = hashlib.md5(data).hexdigest()
+            print("\nMD5 Checksum:", digest)
+
+        except FileNotFoundError:
+            print("File not found!")
+
+    # 5. Compare MD5, SHA-1 and SHA-256
+    elif choice == "5":
+        text = input("Enter text: ")
+
+        md5 = hashlib.md5(text.encode()).hexdigest()
+        sha1 = hashlib.sha1(text.encode()).hexdigest()
+        sha256 = hashlib.sha256(text.encode()).hexdigest()
+
+        print("\nMD5:", md5)
+        print("Length:", len(md5), "characters")
+
+        print("\nSHA-1:", sha1)
+        print("Length:", len(sha1), "characters")
+
+        print("\nSHA-256:", sha256)
+        print("Length:", len(sha256), "characters")
+
+    # 6. Exit
+    elif choice == "6":
+        print("Program terminated.")
+        break
+
+    else:
+        print("Invalid choice! Please try again.")
+
+
+#SHA1
+import hashlib
+
+while True:
+    print("\n========== SHA-1 ==========")
+    print("1. Generate SHA-1 Hash")
+    print("2. Avalanche Effect")
+    print("3. Compare Two Messages")
+    print("4. SHA-1 Preprocessing")
+    print("5. Exit")
+
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        text = input("Enter text: ")
+
+        if text == "":
+            print("Text cannot be empty!")
+        else:
+            print("Original Message:", text)
+            print("SHA-1 Hash:", hashlib.sha1(text.encode()).hexdigest())
+
+    elif choice == "2":
+        text = input("Enter original text: ")
+
+        if text == "":
+            print("Text cannot be empty!")
+        else:
+            pos = int(input("Enter position to change (1 to " + str(len(text)) + "): "))
+
+            if pos < 1 or pos > len(text):
+                print("Invalid position!")
+            else:
+                ch = input("Enter new character: ")
+
+                if len(ch) != 1:
+                    print("Enter only one character!")
+                else:
+                    modified = text[:pos - 1] + ch + text[pos:]
+
+                    hash1 = hashlib.sha1(text.encode()).hexdigest()
+                    hash2 = hashlib.sha1(modified.encode()).hexdigest()
+
+                    print("\nOriginal Message:", text)
+                    print("Original Hash:", hash1)
+                    print("\nModified Message:", modified)
+                    print("Modified Hash:", hash2)
+                    print("Avalanche Effect:", "Hash values are different." if hash1 != hash2 else "Hash values are identical.")
+
+    elif choice == "3":
+        text1 = input("Enter first message: ")
+        text2 = input("Enter second message: ")
+
+        hash1 = hashlib.sha1(text1.encode()).hexdigest()
+        hash2 = hashlib.sha1(text2.encode()).hexdigest()
+
+        print("\nMessage 1 Hash:", hash1)
+        print("Message 2 Hash:", hash2)
+
+        if hash1 == hash2:
+            print("Message digests are identical.")
+        else:
+            print("Message digests are different.")
+
+    elif choice == "4":
+        text = input("Enter a sentence: ")
+
+        if text == "":
+            print("Sentence cannot be empty!")
+        else:
+            binary = ""
+
+            for c in text:
+                binary += format(ord(c), "08b")
+
+            print("\nOriginal Binary:")
+            print(binary)
+
+            length = len(binary)
+            print("\nOriginal Length:", length, "bits")
+
+            padded = binary + "1"
+
+            while len(padded) % 512 != 448:
+                padded += "0"
+
+            padded += format(length, "064b")
+
+            print("\nPadded Message:")
+            print(padded)
+            print("\nTotal Length:", len(padded), "bits")
+
+            print("\n512-bit Blocks:")
+            for i in range(0, len(padded), 512):
+                print("\nBlock", i // 512 + 1)
+                print(padded[i:i + 512])
+
+            print("\nSHA-1 Message Digest:")
+            print(hashlib.sha1(text.encode()).hexdigest())
+
+    elif choice == "5":
+        print("Program terminated.")
+        break
+
+    else:
+        print("Invalid choice! Please try again.")
+
+
+# Diffie-Hellman Key Exchange
+
+# Read public parameters
+p = int(input("Enter Prime Number (p): "))
+g = int(input("Enter Primitive Root (g): "))
+
+# Read private keys
+alice_private = int(input("Enter Alice's Private Key: "))
+bob_private = int(input("Enter Bob's Private Key: "))
+
+# Generate public keys
+alice_public = pow(g, alice_private, p)
+bob_public = pow(g, bob_private, p)
+
+# Compute shared secret keys
+alice_secret = pow(bob_public, alice_private, p)
+bob_secret = pow(alice_public, bob_private, p)
+
+# Display output
+print("\n----- OUTPUT -----")
+print("Prime Number :", p)
+print("Primitive Root :", g)
+print("Alice's Private Key :", alice_private)
+print("Bob's Private Key :", bob_private)
+print("Alice's Public Key :", alice_public)
+print("Bob's Public Key :", bob_public)
+print("Alice's Shared Secret Key :", alice_secret)
+print("Bob's Shared Secret Key :", bob_secret)
+
+# Verification
+if alice_secret == bob_secret:
+    print("Verification : Shared Keys are Identical")
+else:
+    print("Verification : Shared Keys are Different")
+
+# Playfair Cipher - Encryption & Decryption
+
+def generate_key_matrix(keyword):
+    keyword = keyword.upper().replace("J", "I")
+    key = ""
+
+    for ch in keyword:
+        if ch.isalpha() and ch not in key:
+            key += ch
+
+    for ch in "ABCDEFGHIKLMNOPQRSTUVWXYZ":
+        if ch not in key:
+            key += ch
+
+    return [list(key[i:i+5]) for i in range(0, 25, 5)]
+
+
+def find_position(matrix, ch):
+    if ch == "J":
+        ch = "I"
+
+    for i in range(5):
+        for j in range(5):
+            if matrix[i][j] == ch:
+                return i, j
+
+
+def preprocess(text):
+    text = "".join(c for c in text.upper().replace("J", "I") if c.isalpha())
+    result = ""
+    i = 0
+
+    while i < len(text):
+        a = text[i]
+        if i + 1 < len(text):
+            b = text[i + 1]
+            if a == b:
+                result += a + "X"
+                i += 1
+            else:
+                result += a + b
+                i += 2
+        else:
+            result += a + "X"
+            i += 1
+
+    if len(result) % 2 != 0:
+        result += "X"
+
+    return result
+
+
+def encrypt(text, matrix):
+    text = preprocess(text)
+    cipher = ""
+
+    for i in range(0, len(text), 2):
+        a, b = text[i], text[i + 1]
+        r1, c1 = find_position(matrix, a)
+        r2, c2 = find_position(matrix, b)
+
+        if r1 == r2:
+            cipher += matrix[r1][(c1 + 1) % 5]
+            cipher += matrix[r2][(c2 + 1) % 5]
+        elif c1 == c2:
+            cipher += matrix[(r1 + 1) % 5][c1]
+            cipher += matrix[(r2 + 1) % 5][c2]
+        else:
+            cipher += matrix[r1][c2]
+            cipher += matrix[r2][c1]
+
+    return cipher
+
+
+def decrypt(cipher, matrix):
+    text = ""
+
+    for i in range(0, len(cipher), 2):
+        a, b = cipher[i], cipher[i + 1]
+        r1, c1 = find_position(matrix, a)
+        r2, c2 = find_position(matrix, b)
+
+        if r1 == r2:
+            text += matrix[r1][(c1 - 1) % 5]
+            text += matrix[r2][(c2 - 1) % 5]
+        elif c1 == c2:
+            text += matrix[(r1 - 1) % 5][c1]
+            text += matrix[(r2 - 1) % 5][c2]
+        else:
+            text += matrix[r1][c2]
+            text += matrix[r2][c1]
+
+    return text
+
+
+def display_matrix(matrix):
+    print("\nKey Matrix:")
+    for row in matrix:
+        print(" ".join(row))
+
+
+# Main Program
+keyword = input("Enter keyword: ")
+plaintext = input("Enter plaintext: ")
+
+matrix = generate_key_matrix(keyword)
+display_matrix(matrix)
+
+ciphertext = encrypt(plaintext, matrix)
+print("\nEncrypted Text:", ciphertext)
+
+decrypted = decrypt(ciphertext, matrix)
+print("Decrypted Text:", decrypted)
+
+#RSA
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+
+# Generate RSA keys
+key = RSA.generate(2048)
+public_key = key.publickey()
+
+# Input
+text = input("Enter Plaintext: ")
+
+# Encrypt
+cipher = PKCS1_OAEP.new(public_key)
+encrypted = cipher.encrypt(text.encode())
+
+# Decrypt
+cipher = PKCS1_OAEP.new(key)
+decrypted = cipher.decrypt(encrypted).decode()
+
+# Output
+print("Ciphertext:", encrypted.hex())
+print("Decrypted Text:", decrypted)
+
+#AES
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
+# Get plaintext and key
+plaintext = input("Enter plaintext: ")
+key = input("Enter 16-byte key: ").encode()
+
+# Check key length
+if len(key) != 16:
+    print("Error: Key must be exactly 16 bytes.")
+    exit()
+
+# Create AES cipher (ECB mode)
+cipher = AES.new(key, AES.MODE_ECB)
+
+# Encrypt
+ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+
+# Decrypt
+decipher = AES.new(key, AES.MODE_ECB)
+decrypted = unpad(decipher.decrypt(ciphertext), AES.block_size)
+
+# Display results
+print("\n----- OUTPUT -----")
+print("Plaintext           :", plaintext)
+print("Secret Key          :", key.decode())
+print("Ciphertext (Hex)    :", ciphertext.hex())
+print("Decrypted Plaintext :", decrypted.decode())
+
+
+#col
+import math
+
+plain = input("Enter Plaintext: ").upper().replace(" ", "")
+cols = int(input("Enter Number of Columns: "))
+
+rows = math.ceil(len(plain) / cols)
+
+# Padding
+while len(plain) < rows * cols:
+    plain += "X"
+
+# Create matrix
+matrix = [['' for _ in range(cols)] for _ in range(rows)]
+
+# Encryption: Fill column-wise
+k = 0
+for j in range(cols):
+    for i in range(rows):
+        matrix[i][j] = plain[k]
+        k += 1
+
+print("\nEncryption Matrix:")
+for row in matrix:
+    print(row)
+
+# Read row-wise
+cipher = ""
+for i in range(rows):
+    for j in range(cols):
+        cipher += matrix[i][j]
+
+print("Ciphertext:", cipher)
+
+# Decryption
+dmatrix = [['' for _ in range(cols)] for _ in range(rows)]
+
+# Fill row-wise
+k = 0
+for i in range(rows):
+    for j in range(cols):
+        dmatrix[i][j] = cipher[k]
+        k += 1
+
+# Read column-wise
+decrypted = ""
+for j in range(cols):
+    for i in range(rows):
+        decrypted += dmatrix[i][j]
+
+print("Decrypted Text:", decrypted.rstrip("X"))
+
+
+# Caesar Cipher - Menu Driven Program
+
+while True:
+    print("\n===== Caesar Cipher Menu =====")
+    print("1. Encrypt")
+    print("2. Decrypt")
+    print("3. Brute Force Attack")
+    print("4. Exit")
+
+    choice = int(input("Enter your choice: "))
+
+    if choice == 1:
+        text = input("Enter a string: ")
+        shift = int(input("Enter shift value: ")) % 26
+
+        encrypted = ""
+
+        for ch in text:
+            if ch.isupper():
+                encrypted += chr((ord(ch) - 65 + shift) % 26 + 65)
+            elif ch.islower():
+                encrypted += chr((ord(ch) - 97 + shift) % 26 + 97)
+            else:
+                encrypted += ch
+
+        print("Encrypted Cipher:", encrypted)
+
+    elif choice == 2:
+        text = input("Enter encrypted string: ")
+        shift = int(input("Enter shift value: ")) % 26
+
+        decrypted = ""
+
+        for ch in text:
+            if ch.isupper():
+                decrypted += chr((ord(ch) - 65 - shift) % 26 + 65)
+            elif ch.islower():
+                decrypted += chr((ord(ch) - 97 - shift) % 26 + 97)
+            else:
+                decrypted += ch
+
+        print("Decrypted Text:", decrypted)
+
+    elif choice == 3:
+        text = input("Enter encrypted string: ")
+
+        print("\nPossible Decryptions:")
+        for shift in range(26):
+            decrypted = ""
+
+            for ch in text:
+                if ch.isupper():
+                    decrypted += chr((ord(ch) - 65 - shift) % 26 + 65)
+                elif ch.islower():
+                    decrypted += chr((ord(ch) - 97 - shift) % 26 + 97)
+                else:
+                    decrypted += ch
+
+            print(f"Shift {shift:2}: {decrypted}")
+
+    elif choice == 4:
+        print("Exiting...")
+        break
+
+    else:
+        print("Invalid choice! Please try again.")
