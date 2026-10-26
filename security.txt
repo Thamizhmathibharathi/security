@@ -964,3 +964,40 @@ if verified_hash == hash_number:
     print("Signature Verified Successfully")
 else:
     print("Signature Verification Failed")
+
+
+
+
+xor (AES)
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
+# Input message and key
+text = input("Enter the message: ")
+key = input("Enter 16-character key: ").encode()
+
+# AES encryption
+cipher = AES.new(key, AES.MODE_ECB)
+encrypted = cipher.encrypt(pad(text.encode(), AES.block_size))
+
+print("Encrypted message:", encrypted.hex())
+
+# Tamper using XOR with 1010
+tampered = bytearray(encrypted)
+
+for i in range(len(tampered)):
+    tampered[i] ^= 0b1010
+
+print("Tampered message:", tampered.hex())
+
+# Decrypt the tampered ciphertext
+cipher = AES.new(key, AES.MODE_ECB)
+
+try:
+    decrypted = unpad(
+        cipher.decrypt(bytes(tampered)),
+        AES.block_size
+    )
+    print("Decrypted tampered message:", decrypted.decode())
+except (ValueError, UnicodeDecodeError):
+    print("Decryption failed: Padding or message is invalid")
