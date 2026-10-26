@@ -881,38 +881,30 @@ while True:
 
 #(AES + MD5)
 
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
 import hashlib
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 
-key = b"1234567890123456"
-iv = b"abcdefghijklmnop"
+key = input("Enter AES key (16 characters): ").encode()
+iv = bytes.fromhex(input("Enter IV in hexadecimal: "))
+ciphertext = bytes.fromhex(input("Enter ciphertext in hexadecimal: "))
+old_hash = input("Enter original MD5 hash: ")
 
-text = input("Enter message: ")
+# Verify integrity before decryption
+new_hash = hashlib.md5(ciphertext).hexdigest()
 
-# Encryption
-cipher = AES.new(key, AES.MODE_CBC, iv)
-encrypted = cipher.encrypt(pad(text.encode(), 16))
+print("\nStored MD5:", old_hash)
+print("Current MD5:", new_hash)
 
-# Generate hash
-old_hash = hashlib.md5(encrypted).hexdigest()
-
-print("Ciphertext:", encrypted.hex())
-print("Original Hash:", old_hash)
-
-# Verify hash
-new_hash = hashlib.md5(encrypted).hexdigest()
-
-if old_hash == new_hash:
-    print("Hash Matched. Integrity Verified.")
+if new_hash == old_hash:
+    print("Integrity Verified")
 
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    decrypted = unpad(cipher.decrypt(encrypted), 16)
+    decrypted = unpad(cipher.decrypt(ciphertext), AES.block_size)
 
-    print("Decrypted Message:", decrypted.decode())
+    print("Decrypted Data:", decrypted.decode())
 else:
-    print("Hash Mismatch! Decryption Stopped.")
-
+    print("Tampering Detected! Decryption Stopped.")
 
 #RSA+MD5
 import hashlib
