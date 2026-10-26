@@ -878,3 +878,97 @@ while True:
 
     else:
         print("Invalid choice! Please try again.")
+
+#(AES + MD5)
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import hashlib
+
+key = b"1234567890123456"
+iv = b"abcdefghijklmnop"
+
+text = input("Enter message: ")
+
+# Encryption
+cipher = AES.new(key, AES.MODE_CBC, iv)
+encrypted = cipher.encrypt(pad(text.encode(), 16))
+
+# Generate hash
+old_hash = hashlib.md5(encrypted).hexdigest()
+
+print("Ciphertext:", encrypted.hex())
+print("Original Hash:", old_hash)
+
+# Verify hash
+new_hash = hashlib.md5(encrypted).hexdigest()
+
+if old_hash == new_hash:
+    print("Hash Matched. Integrity Verified.")
+
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    decrypted = unpad(cipher.decrypt(encrypted), 16)
+
+    print("Decrypted Message:", decrypted.decode())
+else:
+    print("Hash Mismatch! Decryption Stopped.")
+
+
+#RSA+MD5
+import hashlib
+import math
+
+# Given values
+p = 61
+q = 53
+e = 17
+M = 88
+
+# RSA key generation
+n = p * q
+phi = (p - 1) * (q - 1)
+
+print("n =", n)
+print("Phi(n) =", phi)
+
+if math.gcd(e, phi) != 1:
+    print("Invalid public exponent")
+    exit()
+
+# Calculate private key
+d = pow(e, -1, phi)
+
+print("Public Key:", (e, n))
+print("Private Key:", (d, n))
+
+# RSA Encryption
+C = pow(M, e, n)
+print("Ciphertext:", C)
+
+# RSA Decryption
+recovered = pow(C, d, n)
+print("Decrypted Message:", recovered)
+
+# Convert recovered message to string and calculate MD5
+message = str(recovered)
+md5_hash = hashlib.md5(message.encode()).hexdigest()
+
+print("MD5 Hash:", md5_hash)
+
+# Convert MD5 hash to a number
+hash_number = int(md5_hash, 16)
+hash_number = hash_number % n
+
+print("Numeric Hash:", hash_number)
+
+# Sign the numeric hash using private key
+signature = pow(hash_number, d, n)
+print("Digital Signature:", signature)
+
+# Verify signature using public key
+verified_hash = pow(signature, e, n)
+
+if verified_hash == hash_number:
+    print("Signature Verified Successfully")
+else:
+    print("Signature Verification Failed")
